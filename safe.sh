@@ -41,7 +41,7 @@ enabled   = true
 port      = ssh
 logpath   = $LOG_PATH
 maxretry  = 3
-bantime   = 36000000
+bantime   = 360000000
 findtime  = 600
 EOF
 
