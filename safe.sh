@@ -16,13 +16,30 @@ echo "清理旧配置文件..."
   sudo rm -f /var/run/fail2ban/fail2ban.sock
 } > /dev/null
 
-# 配置 SSH 防护（修复变量问题）
+# 检测 SSH 日志文件路径
+echo "检测 SSH 日志文件路径..."
+LOG_PATH=""
+for path in /var/log/auth.log /var/log/secure /var/log/messages; do
+  if [ -f "$path" ]; then
+    LOG_PATH="$path"
+    break
+  fi
+done
+
+if [ -z "$LOG_PATH" ]; then
+  echo "错误：未找到 SSH 日志文件！请检查系统日志配置。"
+  exit 1
+fi
+
+echo "使用日志文件路径：$LOG_PATH"
+
+# 配置 SSH 防护
 echo "生成 SSH 防护配置..."
-sudo tee /etc/fail2ban/jail.d/sshd.local > /dev/null <<'EOF'
+sudo tee /etc/fail2ban/jail.d/sshd.local > /dev/null <<EOF
 [sshd]
 enabled   = true
 port      = ssh
-logpath   = /var/log/auth.log   # 直接使用固定路径替代变量
+logpath   = $LOG_PATH
 maxretry  = 3
 bantime   = 3600
 findtime  = 600
