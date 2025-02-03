@@ -8,23 +8,21 @@ sudo apt-get install -y fail2ban
 # 清理旧配置冲突
 echo "清理旧配置文件..."
 {
-  # 备份并删除 jail.local（如果存在）
+  # 备份并删除可能冲突的配置
   sudo mv /etc/fail2ban/jail.local /etc/fail2ban/jail.local.bak 2>/dev/null || true
-  
-  # 确保配置目录存在
-  sudo mkdir -p /etc/fail2ban/jail.d
+  sudo rm -f /etc/fail2ban/jail.d/sshd.local 2>/dev/null || true
   
   # 清理旧 socket 文件
   sudo rm -f /var/run/fail2ban/fail2ban.sock
 } > /dev/null
 
-# 配置 SSH 防护
+# 配置 SSH 防护（修复变量问题）
 echo "生成 SSH 防护配置..."
 sudo tee /etc/fail2ban/jail.d/sshd.local > /dev/null <<'EOF'
 [sshd]
 enabled   = true
 port      = ssh
-logpath   = %(auth_log)s
+logpath   = /var/log/auth.log   # 直接使用固定路径替代变量
 maxretry  = 3
 bantime   = 3600
 findtime  = 600
@@ -34,7 +32,7 @@ EOF
 echo "重启 Fail2Ban..."
 {
   sudo systemctl restart fail2ban
-  sleep 2  # 等待服务稳定
+  sleep 2
 
   echo -e "\n服务状态检查："
   sudo systemctl status fail2ban --no-pager -l
